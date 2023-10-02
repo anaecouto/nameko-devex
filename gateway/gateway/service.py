@@ -8,7 +8,7 @@ from werkzeug import Response
 
 from gateway.entrypoints import http
 from gateway.exceptions import OrderNotFound, ProductNotFound
-from gateway.schemas import CreateOrderSchema, GetOrderSchema, ProductSchema
+from gateway.schemas import CreateOrderSchema, GetOrderSchema, ProductSchema, UpdateProductSchema
 
 
 class GatewayService(object):
@@ -33,6 +33,18 @@ class GatewayService(object):
             ProductSchema().dumps(product).data,
             mimetype='application/json'
         )
+
+    @http(
+        "GET", "/products"
+    )
+    def get_products_list(self, request):
+        """Gets a list of products
+        """
+        products = self.products_rpc.list()
+        return Response(
+            ProductSchema().dumps(products, many=True).data,
+            mimetype='application/json'
+        )    
 
     @http(
         "POST", "/products",
@@ -68,12 +80,59 @@ class GatewayService(object):
         except ValueError as exc:
             raise BadRequest("Invalid json: {}".format(exc))
 
-        # Create the product
-        self.products_rpc.create(product_data)
+        try:
+            self.products_rpc.create(product_data)
+        except Exception as error:
+            error_message = "Failed to create product: {}".format(error)
+            raise BadRequest(error_message)
         return Response(
-            json.dumps({'id': product_data['id']}), mimetype='application/json'
+            json.dumps({'id': product_data['id']}), mimetype='application/json',
+            status=201
         )
 
+    @http(
+        "PATCH", "/products/<string:product_id>",
+        expected_exceptions=(ValidationError, BadRequest)
+    )
+    def update_product(self, request, product_id):  
+
+        schema = UpdateProductSchema(strict=True)
+
+        try:
+            # load input data through a schema (for validation)
+            # Note - this may raise `ValueError` for invalid json,
+            # or `ValidationError` if data is invalid.
+            product_data = schema.loads(request.get_data(as_text=True)).data
+        except ValueError as exc:
+            raise BadRequest("Invalid json: {}".format(exc))
+
+        try:
+            self.products_rpc.update(product_data, product_id)
+            updated_product = self.products_rpc.get(product_id)
+
+        except Exception as error:
+            error_message = "Failed to update product: {}".format(error)
+            raise BadRequest(error_message)
+        return Response(
+            json.dumps({'message': f'Product with ID {product_id} updated successfully',
+                         'updated_product': updated_product}), mimetype='application/json'
+        )
+
+    @http(
+        "DELETE", "/products/<string:product_id>",
+        expected_exceptions=ProductNotFound
+    )
+    def delete_product(self, request, product_id):
+        """Deletes product by `product_id`
+        """
+
+        self.products_rpc.delete(product_id)
+        return Response(
+            json.dumps({ 'message': f'Product with id {product_id} deleted successfully.' }), 
+            mimetype='application/json'
+        )
+        
+    
     @http("GET", "/orders/<int:order_id>", expected_exceptions=OrderNotFound)
     def get_order(self, request, order_id):
         """Gets the order details for the order given by `order_id`.
