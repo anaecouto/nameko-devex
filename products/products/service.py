@@ -3,7 +3,7 @@ import logging
 from nameko.events import event_handler
 from nameko.rpc import rpc
 
-from products import dependencies, schemas, exceptions
+from products import dependencies, schemas
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class ProductsService:
         Get product by their respective ID.
 
         Args:
-            product_id (varchar): The ID of the product to retrieve.
+            product_id (str): The ID of the product to retrieve.
 
         Returns:
             dict: The product info.
@@ -34,12 +34,8 @@ class ProductsService:
         exceptions.NotFound: Raises NotFound in case the product with the specified ID is not found in the storage.
         """
 
-        try:
-            product = self.storage.get(product_id)
-            return schemas.Product().dump(product).data
-        except exceptions.NotFound as error:
-            logger.error(f"{error}")
-            raise error
+        product = self.storage.get(product_id)
+        return schemas.Product().dump(product).data
 
     @rpc
     def list(self):
@@ -68,17 +64,8 @@ class ProductsService:
         exceptions.ProductExists: Raises ProductExists in case the product id already exists.
         """
 
-        try:
-            product_data = schemas.Product(strict=True).load(product).data
-            product_exists = self.storage.get(product_data['id'])
-            
-            if product_exists:
-                error_message = "Product with this ID already exists"
-                logger.error(error_message)
-
-                raise exceptions.ProductExists(error_message)
-        except exceptions.NotFound:
-            self.storage.create(product)
+        product_data = schemas.Product(strict=True).load(product).data
+        self.storage.create(product_data)
         
     @rpc
     def update(self, product, product_id):
@@ -103,7 +90,7 @@ class ProductsService:
         Deletes a product.
 
         Args:
-            product_id (varchar): The product ID to delete.
+            product_id (str): The product ID to delete.
 
         Returns:
             A message containing the success of the delete transaction.

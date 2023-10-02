@@ -2,7 +2,7 @@ from nameko import config
 from nameko.extensions import DependencyProvider
 import redis
 
-from products.exceptions import NotFound
+from products.exceptions import NotFound, ProductExists
 
 
 REDIS_URI_KEY = 'REDIS_URI'
@@ -49,6 +49,8 @@ class StorageWrapper:
             yield self._from_hash(self.client.hgetall(key))
 
     def create(self, product):
+        if self.client.exists(self._format_key(product['id'])):
+            raise ProductExists('Product with ID {} already exists'.format(product['id']))
         self.client.hmset(
             self._format_key(product['id']),
             product)
