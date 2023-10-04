@@ -1,0 +1,24 @@
+✓ Able to run locally, debug, unit-test - DONE
+✓ Able to smoke-test and performance test - DONE
+
+✓ Enhance product service - DONE
+✓ Delete product rpc call - DONE
+✓ Wire into smoketest.sh - DONE
+✓ (bonus) Wire into perf-test - DONE
+✓ (bonus) Wire unit-test for this method - DONE
+✓ Enhance order service - DONE
+✓ List orders rpc call - DONE
+✓ Wire into smoketest.sh - DONE
+✓ (bonus) Wire into perf-test - DONE
+✓ (bonus) Wire unit-test for this method - DONE
+✓ Execute performance test - DONE
+
+✓ Question 1: Why is performance degrading as the test run longer?
+
+A: Because the create product and create order calls will make the list orders have larger data with each request.
+
+✓ Question 2: How do you fix it?
+
+A: By removing the no-cache attribute in the yaml file and allowing the requests to be cached.
+
+✓ (bonus): Fix it - DONE
