@@ -14,6 +14,17 @@ def order(db_session):
     db_session.commit()
     return order
 
+@pytest.fixture
+def orders(db_session):
+    orders = [
+        Order(),
+        Order(),
+        Order()
+    ]
+
+    db_session.add_all(orders)
+    db_session.commit()
+    return orders
 
 @pytest.fixture
 def order_details(db_session, order):
@@ -33,6 +44,16 @@ def test_get_order(orders_rpc, order):
     response = orders_rpc.get_order(1)
     assert response['id'] == order.id
 
+def test_list_orders(orders_rpc, orders):
+    response = orders_rpc.list_orders()
+
+    assert isinstance(response, list)
+    assert len(response) == len(orders)
+
+    order_schema = OrderSchema(many=True)
+    dumped_orders = order_schema.dump(orders).data
+    
+    assert response == dumped_orders
 
 @pytest.mark.usefixtures('db_session')
 def test_will_raise_when_order_not_found(orders_rpc):
