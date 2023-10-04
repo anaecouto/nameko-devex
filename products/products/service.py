@@ -103,6 +103,14 @@ class ProductsService:
 
     @event_handler('orders', 'order_created')
     def handle_order_created(self, payload):
+        """
+        Event handler for order creation. This method is automatically called when an order is created.
+
+        Args:
+            payload (dict): The payload containing information about the order to create.
+
+        For each order detail in the payload, this method decrements the stock of the corresponding product by the specified quantity.
+        """
         for product in payload['order']['order_details']:
             self.storage.decrement_stock(
                 product['product_id'], product['quantity'])
