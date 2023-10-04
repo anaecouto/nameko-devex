@@ -26,7 +26,7 @@ class OrdersService:
             order_id (int): The ID of the order to retrieve.
 
         Returns:
-            dict: The order data.
+            order: The order data.
 
         Raises:
         exceptions.NotFound: Raises NotFound in case the order with the given order ID doesn't exist.
@@ -48,7 +48,7 @@ class OrdersService:
             order_details (dict): The body containing the order details.
 
         Returns:
-            dict: The order data.
+            order: The created order data.
 
         Raises:
         exceptions.NotFound: Raises NotFound in case the product with the given product ID doesn't exist.
@@ -81,7 +81,7 @@ class OrdersService:
         List all orders.
 
         Returns:
-            dict: A list containing the orders.
+            orders (list): A list containing the orders.
         """
         orders = self.db.query(Order).all()
 
@@ -96,7 +96,7 @@ class OrdersService:
             order (dict): The ID of the order to retrieve.
 
         Returns:
-            dict: The order data.
+            order (dict): The updated order data.
         """
 
         order_details = {

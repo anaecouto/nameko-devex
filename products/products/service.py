@@ -28,7 +28,7 @@ class ProductsService:
             product_id (str): The ID of the product to retrieve.
 
         Returns:
-            dict: The product info.
+            product (dict): The product info.
 
         Raises:
         exceptions.NotFound: Raises NotFound in case the product with the specified ID is not found in the storage.
@@ -58,7 +58,7 @@ class ProductsService:
             product (dict): The product data to create.
 
         Returns:
-            The created product data.
+            id (str): The id of the created product.
 
         Raises:
         exceptions.ProductExists: Raises ProductExists in case the product id already exists.
@@ -76,7 +76,7 @@ class ProductsService:
             product (dict): The product data to update.
 
         Returns:
-            The updated product data.
+            product (dict): The updated product data.
 
         Raises:
         exceptions.NotFound: Raises NotFound in case the product does not exist.
