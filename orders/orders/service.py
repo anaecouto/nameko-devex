@@ -9,7 +9,7 @@ from orders.schemas import OrderSchema
 
 class OrdersService:
     """
-    This class provides methods to manage orders.
+    Service for managing orders.
     """
 
     name = 'orders'
@@ -48,7 +48,7 @@ class OrdersService:
             order_details (dict): The body containing the order details.
 
         Returns:
-            order: The created order data.
+            order (dict): The created order data.
 
         Raises:
         exceptions.NotFound: Raises NotFound in case the product with the given product ID doesn't exist.

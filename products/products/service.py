@@ -58,7 +58,7 @@ class ProductsService:
             product (dict): The product data to create.
 
         Returns:
-            id (str): The id of the created product.
+            id (dict): The id of the created product.
 
         Raises:
         exceptions.ProductExists: Raises ProductExists in case the product id already exists.
