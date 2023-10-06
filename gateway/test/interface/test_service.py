@@ -228,8 +228,7 @@ class TestCreateOrder(object):
 
         # setup mock create response
         gateway_service.orders_rpc.create_order.return_value = {
-            'id': 11,
-            'order_details': []
+            'id': 11
         }
 
         # call the gateway service to create the order
@@ -239,8 +238,13 @@ class TestCreateOrder(object):
                 'order_details': [
                     {
                         'product_id': 'the_odyssey',
-                        'price': '41.00',
-                        'quantity': 3
+                        'quantity': 3,
+                        'price': '41.00'
+                    },
+                    {
+                        'product_id': 'the_enigma',
+                        'quantity': 1,
+                        'price': '100000.99'
                     }
                 ]
             })
@@ -250,7 +254,8 @@ class TestCreateOrder(object):
         assert gateway_service.products_rpc.list.call_args_list == [call()]
         assert gateway_service.orders_rpc.create_order.call_args_list == [
             call([
-                {'product_id': 'the_odyssey', 'quantity': 3, 'price': '41.00'}
+                {'product_id': 'the_odyssey', 'quantity': 3, 'price': '41.00'},
+                {'product_id': 'the_enigma', 'quantity': 1, 'price': '100000.99'},
             ])
         ]
 
@@ -285,24 +290,6 @@ class TestCreateOrder(object):
     def test_create_order_fails_with_unknown_product(
         self, gateway_service, web_session
     ):
-        # setup mock products-service response:
-        gateway_service.products_rpc.list.return_value = [
-            {
-                'id': 'the_odyssey',
-                'title': 'The Odyssey',
-                'maximum_speed': 3,
-                'in_stock': 899,
-                'passenger_capacity': 100
-            },
-            {
-                'id': 'the_enigma',
-                'title': 'The Enigma',
-                'maximum_speed': 200,
-                'in_stock': 1,
-                'passenger_capacity': 4
-            },
-        ]
-
         # call the gateway service to create the order
         response = web_session.post(
             '/orders',
