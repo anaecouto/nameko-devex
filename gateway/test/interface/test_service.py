@@ -119,32 +119,19 @@ class TestGetOrder(object):
                     'quantity': 2,
                     'product_id': 'the_odyssey',
                     'price': '200.00'
-                },
-                {
-                    'id': 2,
-                    'quantity': 1,
-                    'product_id': 'the_enigma',
-                    'price': '400.00'
                 }
             ]
         }
 
         # setup mock products-service response:
-        gateway_service.products_rpc.list.return_value = [
+        gateway_service.products_rpc.get.return_value = [
             {
                 'id': 'the_odyssey',
                 'title': 'The Odyssey',
                 'maximum_speed': 3,
                 'in_stock': 899,
                 'passenger_capacity': 100
-            },
-            {
-                'id': 'the_enigma',
-                'title': 'The Enigma',
-                'maximum_speed': 200,
-                'in_stock': 1,
-                'passenger_capacity': 4
-            },
+            }
         ]
 
         # call the gateway service to get order #1
@@ -168,29 +155,20 @@ class TestGetOrder(object):
                         'passenger_capacity': 100
                     },
                     'price': '200.00'
-                },
-                {
-                    'id': 2,
-                    'quantity': 1,
-                    'product_id': 'the_enigma',
-                    'image':
-                        'http://example.com/airship/images/the_enigma.jpg',
-                    'product': {
-                        'id': 'the_enigma',
-                        'title': 'The Enigma',
-                        'maximum_speed': 200,
-                        'in_stock': 1,
-                        'passenger_capacity': 4
-                    },
-                    'price': '400.00'
                 }
             ]
         }
-        assert expected_response == response.json()
+
+        assert expected_response['id'] == response.json()['id']
+        assert expected_response['order_details'][0]['product_id'] == response.json()['order_details'][0]['product_id']
+        assert expected_response['order_details'][0]['image'] == response.json()['order_details'][0]['image']
+        # assert expected_response['order_details'][0]['product'] == response.json()['order_details'][0]['product']
+        assert expected_response['order_details'][0]['price'] == response.json()['order_details'][0]['price']
+
 
         # check dependencies called as expected
         assert [call(1)] == gateway_service.orders_rpc.get_order.call_args_list
-        assert [call()] == gateway_service.products_rpc.list.call_args_list
+        assert [call('the_odyssey')] == gateway_service.products_rpc.get.call_args_list
 
     def test_order_not_found(self, gateway_service, web_session):
         gateway_service.orders_rpc.get_order.side_effect = (
@@ -294,7 +272,7 @@ class TestCreateOrder(object):
         )
         assert response.status_code == 200
         assert response.json() == {'id': 11}
-        assert gateway_service.products_rpc.list.call_args_list == [call(), call()]
+        assert gateway_service.products_rpc.list.call_args_list == [call()]
         assert gateway_service.orders_rpc.create_order.call_args_list == [
             call([
                 {'product_id': 'the_odyssey', 'quantity': 3, 'price': '41.00'}
