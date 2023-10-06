@@ -47,6 +47,58 @@ def test_create(product, redis_client, storage):
         int(stored_product[b'passenger_capacity']))
     assert product['in_stock'] == int(stored_product[b'in_stock'])
 
+def test_update_existing_product(storage, redis_client):
+    product_id = 'LZ123'
+
+    initial_data = {
+        'id': product_id,
+        'title': 'The Odyssey',
+        'maximum_speed': 100,
+        'passenger_capacity': 50,
+        'in_stock': 10
+    }
+
+    redis_client.hmset(storage._format_key(product_id), initial_data)
+
+    updated_data = {
+        'title': 'The Updated Odyssey',
+        'maximum_speed': 200,
+        'passenger_capacity': 75,
+        'in_stock': 5
+    }
+
+    storage.update(updated_data, product_id)
+
+    updated_product = redis_client.hgetall(storage._format_key(product_id))
+
+    assert updated_data['title'].encode('utf-8') == updated_product[b'title']
+    assert updated_data['maximum_speed'] == int(updated_product[b'maximum_speed'])
+    assert updated_data['passenger_capacity'] == int(updated_product[b'passenger_capacity'])
+    assert updated_data['in_stock'] == int(updated_product[b'in_stock'])
+
+def test_update_non_existing_product(storage):
+    with pytest.raises(storage.NotFound):
+        storage.update({'title': 'The New Odyssey'}, 'non_existing_id')
+
+def test_delete_existing_product(storage, redis_client):
+    product_id = 'LZ123'
+    initial_data = {
+        'id': product_id,
+        'title': 'Test Product',
+        'maximum_speed': 100,
+        'passenger_capacity': 50,
+        'in_stock': 10
+    }
+
+    redis_client.hmset(storage._format_key(product_id), initial_data)
+    storage.delete(product_id)
+    product_exists = redis_client.exists(storage._format_key(product_id))
+
+    assert not product_exists
+
+def test_delete_non_existing_product(storage):
+    with pytest.raises(storage.NotFound):
+        storage.delete('non_existing_id')
 
 def test_decrement_stock(storage, create_product, redis_client):
     create_product(id=1, title='LZ 127', in_stock=10)
