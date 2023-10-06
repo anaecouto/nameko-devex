@@ -20,10 +20,19 @@ def get_product(product_id: str, rpc = Depends(get_rpc)):
             detail=str(error)
         )
 
-@router.post("", status_code=status.HTTP_200_OK, response_model=schemas.CreateProductSuccess)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.CreateProductSuccess)
 def create_product(request: schemas.Product, rpc = Depends(get_rpc)):
     with rpc.next() as nameko:
         nameko.products.create(request.dict())
         return {
             "id": request.id
+        }
+
+@router.delete("/{product_id}", status_code=status.HTTP_200_OK)
+def delete_product(product_id: str, rpc = Depends(get_rpc)):
+    with rpc.next() as nameko:
+        nameko.products.delete(product_id)
+
+        return {
+            'message': 'Product with id {} deleted successfully.'.format(product_id)
         }

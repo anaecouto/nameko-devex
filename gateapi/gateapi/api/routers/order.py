@@ -66,3 +66,8 @@ def _create_order(order_data, nameko_rpc):
             order_data['order_details']
         )
         return result['id']
+    
+@router.get("", status_code=status.HTTP_200_OK)
+def list_orders(rpc = Depends(get_rpc)):
+    with rpc.next() as nameko_rpc:
+        return nameko_rpc.orders.list_orders()
