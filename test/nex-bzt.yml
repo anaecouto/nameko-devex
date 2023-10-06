@@ -133,9 +133,9 @@ scenarios:
       then:
         - action: continue
 
-      # 6. Get Orders
+      # 6. List Orders
     - url: /orders/
-      label: orders-get
+      label: list-orders
       think-time: uniform(0s, 0s)
       method: GET
         
