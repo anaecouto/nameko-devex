@@ -250,6 +250,8 @@ class GatewayService(object):
                 raise ProductNotInStock(
                     "Product with ID {} is not in stock".format(product_id)
                 )
+            if item['quantity'] > product_in_stock.get(product_id, 0):
+                raise BadRequest("Order quantity exceeds quantity limit.")
 
         # Call orders-service to create the order.
         # Dump the data through the schema to ensure the values are serialized
