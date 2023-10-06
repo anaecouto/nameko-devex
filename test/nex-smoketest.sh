@@ -45,9 +45,7 @@ curl -s --location --request PATCH "${STD_APP_URL}/products/the_odyssey" \
     -d '{
     "title": "The New Odyssey"
 }' | jq .
-# Teste: Delete Product
-echo "=== Delete product: the_odyssey ==="
-curl -s --location --request DELETE "${STD_APP_URL}/products/the_odyssey" | jq .
+
 # Test: Create Order
 echo "=== Creating Order ==="
 ORDER_ID=$(
@@ -66,3 +64,7 @@ curl -s "${STD_APP_URL}/orders/${ID}" | jq .
 # Test: Get Orders
 echo "=== Getting Orders ==="
 curl -s 'localhost:8000/orders/' | jq .
+
+# Teste: Delete Product
+echo "=== Delete product: the_odyssey ==="
+curl -s --location --request DELETE "${STD_APP_URL}/products/the_odyssey" | jq .
