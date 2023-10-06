@@ -2,7 +2,7 @@ import json
 
 from mock import call
 
-from gateway.exceptions import OrderNotFound, ProductNotFound
+from gateway.exceptions import OrderNotFound, ProductNotFound, ProductExists
 
 
 class TestGetProduct(object):
@@ -51,7 +51,7 @@ class TestCreateProduct(object):
                 "title": "The Odyssey"
             })
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert response.json() == {'id': 'the_odyssey'}
         assert gateway_service.products_rpc.create.call_args_list == [call({
                 "in_stock": 10,
@@ -79,6 +79,32 @@ class TestCreateProduct(object):
         )
         assert response.status_code == 400
         assert response.json()['error'] == 'VALIDATION_ERROR'
+
+    def test_create_product_fails_with_existing_id(self, gateway_service, web_session):
+
+        gateway_service.products_rpc.create.side_effect = ProductExists('Product with ID the_odyssey already exists')
+
+        response = web_session.post(
+            '/products',
+            json.dumps({
+                "in_stock": 10,
+                "maximum_speed": 5,
+                "id": "the_odyssey",
+                "passenger_capacity": 101,
+                "title": "The Odyssey"
+            })
+        )
+
+        assert response.status_code == 400
+        assert response.json()['error'] == 'PRODUCT_EXISTS'
+        assert response.json()['message'] == 'Failed to create product: Product with ID the_odyssey already exists'
+        assert gateway_service.products_rpc.create.call_args_list == [call({
+                "in_stock": 10,
+                "maximum_speed": 5,
+                "id": "the_odyssey",
+                "passenger_capacity": 101,
+                "title": "The Odyssey"
+            })]
 
 
 class TestGetOrder(object):
@@ -175,7 +201,55 @@ class TestGetOrder(object):
         assert response.status_code == 404
         payload = response.json()
         assert payload['error'] == 'ORDER_NOT_FOUND'
-        assert payload['message'] == 'missing'
+        assert payload['message'] == 'Failed to get order: missing'
+
+    def test_list_orders(self, gateway_service, web_session):
+
+        gateway_service.orders_rpc.list_orders.return_value = [
+            {
+                'id': 1,
+                'order_details': [
+                    {
+                        'id': 1,
+                        'quantity': 2,
+                        'product_id': 'the_odyssey',
+                        'price': '200.00'
+                    },
+                    {
+                        'id': 2,
+                        'quantity': 1,
+                        'product_id': 'the_enigma',
+                        'price': '400.00'
+                    }
+                ]
+            },
+        ]
+    
+        response = web_session.get('/orders/')
+        response_data = response.json()
+    
+        expected_response = [
+            {
+                'id': 1,
+                'order_details': [
+                    {
+                        'id': 1,
+                        'quantity': 2,
+                        'product_id': 'the_odyssey',
+                        'price': '200.00'
+                    },
+                    {
+                        'id': 2,
+                        'quantity': 1,
+                        'product_id': 'the_enigma',
+                        'price': '400.00'
+                    }
+                ]
+            },
+        ]
+    
+        assert response.status_code == 200
+        assert response_data == expected_response
 
 
 class TestCreateOrder(object):
@@ -220,7 +294,7 @@ class TestCreateOrder(object):
         )
         assert response.status_code == 200
         assert response.json() == {'id': 11}
-        assert gateway_service.products_rpc.list.call_args_list == [call()]
+        assert gateway_service.products_rpc.list.call_args_list == [call(), call()]
         assert gateway_service.orders_rpc.create_order.call_args_list == [
             call([
                 {'product_id': 'the_odyssey', 'quantity': 3, 'price': '41.00'}
@@ -291,4 +365,4 @@ class TestCreateOrder(object):
         )
         assert response.status_code == 404
         assert response.json()['error'] == 'PRODUCT_NOT_FOUND'
-        assert response.json()['message'] == 'Product Id unknown'
+        assert response.json()['message'] == 'Failed to create order: Product ID unknown does not exist'
