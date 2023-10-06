@@ -25,6 +25,7 @@ scenarios:
       think-time: uniform(0s, 0s)
       method: POST
       headers:
+        cache-control: no-cache
         Content-Type: application/json
       body: 'request-body-string'
       body: >
@@ -69,6 +70,7 @@ scenarios:
       think-time: uniform(0s, 0s)
       method: PATCH
       headers:
+        cache-control: no-cache
         Content-Type: application/json
       body: >
         {
@@ -92,6 +94,7 @@ scenarios:
       think-time: uniform(0s, 0s)
       method: POST
       headers:
+        cache-control: no-cache
         Content-Type: application/json
       body: 'request-body-string'
       body: >
@@ -132,7 +135,7 @@ scenarios:
 
       # 6. Get Orders
     - url: /orders/
-      label: order-get
+      label: orders-get
       think-time: uniform(0s, 0s)
       method: GET
         
