@@ -15,10 +15,10 @@
 
 ✓ Question 1: Why is performance degrading as the test run longer?
 
-A: Because the create product and create order calls will make the list orders have larger data with each request.
+A: Because the get order and create order calls will make the list orders have larger data with rpc call in the respective methods.
 
 ✓ Question 2: How do you fix it?
 
-A: By removing the no-cache attribute in the yaml file and allowing the requests to be cached.
+A: Refactoring both so it removes the amount of unnecessary calls. In get order we remove the need to list all the products since we only need a certain amount of information in the order details and in create order we do a refactoring to call the the products listing only once to iterate over the product IDs and the in_stock attributes.
 
 ✓ (bonus): Fix it - DONE
