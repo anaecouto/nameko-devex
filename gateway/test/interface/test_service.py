@@ -349,3 +349,33 @@ class TestCreateOrder(object):
         assert response.status_code == 400
         assert response.json()['error'] == 'PRODUCT_NOT_IN_STOCK'
         assert response.json()['message'] == 'Failed to create order: Product with ID the_odyssey is not in stock'
+
+    def test_create_order_fails_with_order_quantity_higher_than_quantity_in_stock(
+        self, gateway_service, web_session
+    ):
+
+        gateway_service.products_rpc.list.return_value = [
+            {
+                'id': 'the_odyssey',
+                'title': 'The Odyssey',
+                'maximum_speed': 3,
+                'in_stock': 5,
+                'passenger_capacity': 100
+            }
+        ]
+
+        response = web_session.post(
+            '/orders',
+            json.dumps({
+                'order_details': [
+                    {
+                        'product_id': 'the_odyssey',
+                        'price': '41',
+                        'quantity': 6
+                    }
+                ]
+            })
+        )
+        assert response.status_code == 400
+        assert response.json()['error'] == 'BAD_REQUEST'
+        assert response.json()['message'] == 'Order quantity exceeds quantity limit.'
