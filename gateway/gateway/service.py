@@ -166,18 +166,13 @@ class GatewayService(object):
         # raise``OrderNotFound``
         order = self.orders_rpc.get_order(order_id)
 
-        # Retrieve all products from the products service
-        product_map = {prod['id']: prod for prod in self.products_rpc.list()}
-
-        if not product_map:
-            raise ProductNotFound("This product doesn't exist.")
         # get the configured image root
         image_root = config['PRODUCT_IMAGE_ROOT']
 
-        # Enhance order details with product and image details.
+        # Enhance order details with product and image details
         for item in order['order_details']:
             product_id = item['product_id']
-            item['product'] = product_map[product_id]
+            item['product'] = self.products_rpc.get(product_id)
             # Construct an image url.
             item['image'] = '{}/{}.jpg'.format(image_root, product_id)
 
@@ -236,18 +231,26 @@ class GatewayService(object):
         return Response(json.dumps({'id': id_}), mimetype='application/json')
 
     def _create_order(self, order_data):
-        # check order product ids are valid
-        valid_product_ids = {prod['id'] for prod in self.products_rpc.list()}
-        product_in_stock = {prod['in_stock'] for prod in self.products_rpc.list()}
 
+        all_products = self.products_rpc.list()
+
+        valid_product_ids = set()
+        product_in_stock = {}
+    
+        for prod in all_products:
+            valid_product_ids.add(prod['id'])
+            product_in_stock[prod['id']] = prod['in_stock']
+    
         for item in order_data['order_details']:
-            if item['product_id'] not in valid_product_ids:
+            product_id = item['product_id']
+            if product_id not in valid_product_ids:
                 raise ProductNotFound(
-                    "Product ID {} does not exist".format(item['product_id'])
+                    "Product ID {} does not exist".format(product_id)
                 )
-            for in_stock in product_in_stock:
-                if in_stock == 0:
-                    raise ProductNotInStock("Product with ID {} is not in stock".format(item['product_id']))
+            if product_in_stock.get(product_id, 0) == 0:
+                raise ProductNotInStock(
+                    "Product with ID {} is not in stock".format(product_id)
+                )
 
         # Call orders-service to create the order.
         # Dump the data through the schema to ensure the values are serialized
