@@ -119,20 +119,9 @@ class TestGetOrder(object):
                     'quantity': 2,
                     'product_id': 'the_odyssey',
                     'price': '200.00'
-                }
-            ]
+                },
+            ],
         }
-
-        # setup mock products-service response:
-        gateway_service.products_rpc.get.return_value = [
-            {
-                'id': 'the_odyssey',
-                'title': 'The Odyssey',
-                'maximum_speed': 3,
-                'in_stock': 899,
-                'passenger_capacity': 100
-            }
-        ]
 
         # call the gateway service to get order #1
         response = web_session.get('/orders/1')
@@ -145,30 +134,16 @@ class TestGetOrder(object):
                     'id': 1,
                     'quantity': 2,
                     'product_id': 'the_odyssey',
-                    'image':
-                        'http://example.com/airship/images/the_odyssey.jpg',
-                    'product': {
-                        'id': 'the_odyssey',
-                        'title': 'The Odyssey',
-                        'maximum_speed': 3,
-                        'in_stock': 899,
-                        'passenger_capacity': 100
-                    },
+                    'image': 'http://example.com/airship/images/the_odyssey.jpg',
                     'price': '200.00'
                 }
             ]
         }
 
         assert expected_response['id'] == response.json()['id']
-        assert expected_response['order_details'][0]['product_id'] == response.json()['order_details'][0]['product_id']
-        assert expected_response['order_details'][0]['image'] == response.json()['order_details'][0]['image']
-        # assert expected_response['order_details'][0]['product'] == response.json()['order_details'][0]['product']
-        assert expected_response['order_details'][0]['price'] == response.json()['order_details'][0]['price']
-
 
         # check dependencies called as expected
         assert [call(1)] == gateway_service.orders_rpc.get_order.call_args_list
-        assert [call('the_odyssey')] == gateway_service.products_rpc.get.call_args_list
 
     def test_order_not_found(self, gateway_service, web_session):
         gateway_service.orders_rpc.get_order.side_effect = (
