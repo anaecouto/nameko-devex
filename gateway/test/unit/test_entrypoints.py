@@ -3,7 +3,7 @@ import pytest
 from marshmallow import ValidationError
 
 from gateway.entrypoints import HttpEntrypoint
-from gateway.exceptions import ProductNotFound, OrderNotFound
+from gateway.exceptions import ProductNotFound, OrderNotFound, ProductExists, ProductNotInStock
 
 
 class TestHttpEntrypoint(object):
@@ -16,6 +16,8 @@ class TestHttpEntrypoint(object):
             (ProductNotFound('p1'), 'PRODUCT_NOT_FOUND', 404, 'p1'),
             (OrderNotFound('o1'), 'ORDER_NOT_FOUND', 404, 'o1'),
             (TypeError('t1'), 'BAD_REQUEST', 400, 't1'),
+            (ProductExists('p2'), 'PRODUCT_EXISTS', 400, 'p2'),
+            (ProductNotInStock('p3'), 'PRODUCT_NOT_IN_STOCK', 400, 'p3')
         ]
     )
     def test_error_handling(
@@ -27,8 +29,39 @@ class TestHttpEntrypoint(object):
             ProductNotFound,
             OrderNotFound,
             TypeError,
+            ProductExists,
+            ProductNotInStock
         )
+        
+        response = entrypoint.response_from_exception(exc)
+        response_data = json.loads(response.data.decode())
 
+        assert response.mimetype == 'application/json'
+        assert response.status_code == expected_status_code
+        assert response_data['error'] == expected_error
+        assert response_data['message'] == expected_message
+
+    @pytest.mark.parametrize(
+        ('exc', 'expected_error', 'expected_status_code',
+            'expected_message'), [
+            (ValueError('unexpected'), 'UNEXPECTED_ERROR', 500, 'unexpected'),
+            (ProductExists('p2'), 'PRODUCT_EXISTS', 400, 'p2'),
+            (ValidationError('v1'), 'VALIDATION_ERROR', 400, 'v1'),
+            (ProductNotFound('p1'), 'PRODUCT_NOT_FOUND', 404, 'p1'),
+            (ProductNotInStock('p3'), 'PRODUCT_NOT_IN_STOCK', 400, 'p3')
+        ]
+    )
+    def test_post_error_handling(
+        self, exc, expected_error, expected_status_code, expected_message
+    ):
+        entrypoint = HttpEntrypoint('POST', 'url')
+        entrypoint.expected_exceptions = (
+            ValidationError,
+            ProductExists,
+            ProductNotInStock,
+            ProductNotFound
+        )
+        
         response = entrypoint.response_from_exception(exc)
         response_data = json.loads(response.data.decode())
 
