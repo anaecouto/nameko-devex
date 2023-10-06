@@ -366,3 +366,33 @@ class TestCreateOrder(object):
         assert response.status_code == 404
         assert response.json()['error'] == 'PRODUCT_NOT_FOUND'
         assert response.json()['message'] == 'Failed to create order: Product ID unknown does not exist'
+
+    def test_create_order_fails_with_product_not_in_stock(
+        self, gateway_service, web_session
+    ):
+
+        gateway_service.products_rpc.list.return_value = [
+            {
+                'id': 'the_odyssey',
+                'title': 'The Odyssey',
+                'maximum_speed': 3,
+                'in_stock': 0,
+                'passenger_capacity': 100
+            }
+        ]
+
+        response = web_session.post(
+            '/orders',
+            json.dumps({
+                'order_details': [
+                    {
+                        'product_id': 'the_odyssey',
+                        'price': '41',
+                        'quantity': 1
+                    }
+                ]
+            })
+        )
+        assert response.status_code == 400
+        assert response.json()['error'] == 'PRODUCT_NOT_IN_STOCK'
+        assert response.json()['message'] == 'Failed to create order: Product with ID the_odyssey is not in stock'
