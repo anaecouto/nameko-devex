@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, HTTPException
 from fastapi.params import Depends
 from gateapi.api.dependencies import get_rpc
 from gateapi.api import schemas
-from .exceptions import ProductNotFound
+from .exceptions import ProductNotFound, ProductExists
 
 router = APIRouter(
     prefix = "/products",
@@ -23,7 +23,11 @@ def get_product(product_id: str, rpc = Depends(get_rpc)):
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.CreateProductSuccess)
 def create_product(request: schemas.Product, rpc = Depends(get_rpc)):
     with rpc.next() as nameko:
-        nameko.products.create(request.dict())
+        try:
+            nameko.products.create(request.dict())
+        except ProductExists as error:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to create product: {}".format(error))
         return {
             "id": request.id
         }
@@ -31,8 +35,11 @@ def create_product(request: schemas.Product, rpc = Depends(get_rpc)):
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 def delete_product(product_id: str, rpc = Depends(get_rpc)):
     with rpc.next() as nameko:
-        nameko.products.delete(product_id)
-
+        try:
+            nameko.products.delete(product_id)
+        except ProductNotFound as error:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+            detail="Failed to create product: {}".format(error))
         return {
             'message': 'Product with id {} deleted successfully.'.format(product_id)
         }
