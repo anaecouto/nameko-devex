@@ -39,7 +39,7 @@ def delete_product(product_id: str, rpc = Depends(get_rpc)):
             nameko.products.delete(product_id)
         except ProductNotFound as error:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-            detail="Failed to create product: {}".format(error))
+            detail="Failed to delete product: {}".format(error))
         return {
             'message': 'Product with id {} deleted successfully.'.format(product_id)
         }
