@@ -91,6 +91,6 @@ def _create_order(order_data, nameko_rpc):
         return result['id']
     
 @router.get("", status_code=status.HTTP_200_OK)
-def list_orders(items=1, items_per_page=10, rpc = Depends(get_rpc)):
+def list_orders(page=1, items_per_page=10, rpc = Depends(get_rpc)):
     with rpc.next() as nameko_rpc:
-        return nameko_rpc.orders.list_orders(int(items), int(items_per_page))
+        return nameko_rpc.orders.list_orders(int(page), int(items_per_page))
