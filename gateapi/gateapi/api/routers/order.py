@@ -4,7 +4,7 @@ from fastapi.params import Depends
 from typing import List
 from gateapi.api import schemas
 from gateapi.api.dependencies import get_rpc, config
-from .exceptions import OrderNotFound
+from .exceptions import OrderNotFound, ProductNotFound, ProductNotInStock
 
 router = APIRouter(
     prefix = "/orders",
@@ -47,22 +47,50 @@ def _get_order(order_id, nameko_rpc):
 
 @router.post("", status_code=status.HTTP_200_OK, response_model=schemas.CreateOrderSuccess)
 def create_order(request: schemas.CreateOrder, rpc = Depends(get_rpc)):
-    id_ =  _create_order(request.dict(), rpc)
+    try:
+        id_ =  _create_order(request.dict(), rpc)
+    except ProductNotInStock as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Failed to create order: {}".format(error))
+    except ProductNotFound as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail="Failed to create order: {}".format(error))
     return {
         'id': id_
     }
 
 def _create_order(order_data, nameko_rpc):
-    # check order product ids are valid
     with nameko_rpc.next() as nameko:
-        valid_product_ids = {prod['id'] for prod in nameko.products.list()}
+        all_products = nameko.products.list()
+    
+        valid_product_ids = set()
+        product_in_stock = {}
+        
+        for prod in all_products:
+            valid_product_ids.add(prod['id'])
+            product_in_stock[prod['id']] = prod['in_stock']
+        # check order product ids are valid
         for item in order_data['order_details']:
-            if item['product_id'] not in valid_product_ids:
+            product_id = item['product_id']
+            
+            if product_id not in valid_product_ids:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                    detail=f"Product with id {item['product_id']} not found"
-            )
+                detail=f"Product with id {item['product_id']} not found")
+            if product_in_stock.get(product_id, 0) == 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Product with ID {} is not in stock".format(product_id)
+                )
+            if item['quantity'] > product_in_stock.get(product_id, 0):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Order quantity exceeds quantity limit.")
+            
         # Call orders-service to create the order.
         result = nameko.orders.create_order(
             order_data['order_details']
         )
         return result['id']
+    
+@router.get("", status_code=status.HTTP_200_OK)
+def list_orders(page=1, items_per_page=10, rpc = Depends(get_rpc)):
+    with rpc.next() as nameko_rpc:
+        return nameko_rpc.orders.list_orders(int(page), int(items_per_page))

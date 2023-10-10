@@ -38,7 +38,7 @@ scenarios:
         }          
       assert:
       - contains:
-        - 200
+        - 201
         subject: http-code
         not: false
       extract-jsonpath:
@@ -63,8 +63,32 @@ scenarios:
       extract-jsonpath:
         product_key: $.id
         default: NOT_FOUND
+    
+    # 3. Update Product
+    - url: /products/${product_id}
+      label: product-update
+      think-time: uniform(0s, 0s)
+      method: PATCH
+      headers:
+        cache-control: no-cache
+        Content-Type: application/json
+      body: >
+        {
+          "title": "${title}",
+          "passenger_capacity": ${passenger_capacity},
+          "maximum_speed": ${maximum_speed},
+          "in_stock": ${in_stock}
+        }
+      assert:
+      - contains:
+        - 200
+        subject: http-code
+        not: false
+      extract-jsonpath:
+        product_key: $.id
+        default: NOT_FOUND
 
-    # 3. Create Orders
+    # 4. Create Orders
     - url: /orders
       label: orders-create
       think-time: uniform(0s, 0s)
@@ -90,7 +114,7 @@ scenarios:
       then:
         - action: continue
   
-    # 4. Get Orders
+    # 5. Get An Order
     - url: /orders/${order_id}
       label: order-get
       think-time: uniform(0s, 0s)
@@ -108,6 +132,38 @@ scenarios:
     - if: '"${order_id}" == "NOT_FOUND"'
       then:
         - action: continue
+
+      # 6. List Orders
+    - url: /orders/
+      label: list-orders
+      think-time: uniform(0s, 0s)
+      method: GET
+        
+      assert:
+      - contains:
+        - 200
+        subject: http-code
+        not: false
+      extract-jsonpath:
+        order_id: $.id
+        default: NOT_FOUND
+
+      # 7. Delete Product
+    - url: /products/${product_id}
+      label: product-delete
+      think-time: uniform(0s, 0s)
+      method: DELETE
+      headers:
+        cache-control: no-cache
+        Content-Type: application/json
+      assert:
+      - contains:
+        - 200
+        subject: http-code
+        not: false
+      extract-jsonpath:
+        product_key: $.id
+        default: NOT_FOUND
   
 reporting:
 - module: final-stats

@@ -37,6 +37,14 @@ echo
 # Test: Get Product
 echo "=== Getting product id: the_odyssey ==="
 curl -s "${STD_APP_URL}/products/the_odyssey" | jq .
+# Test: Update Product
+echo "=== Updating product: the_odyssey ==="
+curl -s --location --request PATCH "${STD_APP_URL}/products/the_odyssey" \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "title": "The New Odyssey"
+}' | jq .
 
 # Test: Create Order
 echo "=== Creating Order ==="
@@ -52,3 +60,11 @@ ID=$(echo ${ORDER_ID} | jq '.id')
 # Test: Get Order back
 echo "=== Getting Order ==="
 curl -s "${STD_APP_URL}/orders/${ID}" | jq .
+
+# Test: Get Orders
+echo "=== Getting Orders ==="
+curl -s 'localhost:8000/orders/' | jq .
+
+# Teste: Delete Product
+echo "=== Delete product: the_odyssey ==="
+curl -s --location --request DELETE "${STD_APP_URL}/products/the_odyssey" | jq .

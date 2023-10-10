@@ -2,12 +2,17 @@ from nameko.events import EventDispatcher
 from nameko.rpc import rpc
 from nameko_sqlalchemy import DatabaseSession
 
+from nameko.exceptions import BadRequest
 from orders.exceptions import NotFound
 from orders.models import DeclarativeBase, Order, OrderDetail
 from orders.schemas import OrderSchema
 
 
 class OrdersService:
+    """
+    Service for managing orders.
+    """
+
     name = 'orders'
 
     db = DatabaseSession(DeclarativeBase)
@@ -15,6 +20,19 @@ class OrdersService:
 
     @rpc
     def get_order(self, order_id):
+        """
+        Get an order by its ID.
+
+        Args:
+            order_id (int): The ID of the order to retrieve.
+
+        Returns:
+            order: The order data.
+
+        Raises:
+        exceptions.NotFound: Raises NotFound in case the order with the given order ID doesn't exist.
+        """
+
         order = self.db.query(Order).get(order_id)
 
         if not order:
@@ -24,6 +42,19 @@ class OrdersService:
 
     @rpc
     def create_order(self, order_details):
+        """
+        Creates an order.
+
+        Args:
+            order_details (dict): The body containing the order details.
+
+        Returns:
+            order (dict): The created order data.
+
+        Raises:
+        exceptions.NotFound: Raises NotFound in case the product with the given product ID doesn't exist.
+        """
+
         order = Order(
             order_details=[
                 OrderDetail(
@@ -44,9 +75,33 @@ class OrdersService:
         })
 
         return order
+    
+    @rpc
+    def list_orders(self, page, per_page):
+        """
+        List all orders.
+
+        Returns:
+            orders (list): A list containing the orders.
+        """
+        
+        offset = (page - 1) * per_page
+        orders = self.db.query(Order).offset(offset).limit(per_page).all()
+
+        return OrderSchema(many=True).dump(orders).data
 
     @rpc
     def update_order(self, order):
+        """
+        Update an existing order with new details.
+
+        Args:
+            order (dict): The ID of the order to retrieve.
+
+        Returns:
+            order (dict): The updated order data.
+        """
+
         order_details = {
             order_details['id']: order_details
             for order_details in order['order_details']
@@ -63,6 +118,16 @@ class OrdersService:
 
     @rpc
     def delete_order(self, order_id):
+        """
+        Delete an order by its ID.
+
+        Args:
+            order_id (int): The ID of the order to be deleted.
+
+        Returns:
+            None
+        """
+
         order = self.db.query(Order).get(order_id)
         self.db.delete(order)
         self.db.commit()

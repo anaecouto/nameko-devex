@@ -4,7 +4,7 @@ from nameko.standalone.events import event_dispatcher
 from nameko.testing.services import entrypoint_waiter
 import pytest
 
-from products.dependencies import NotFound
+from products.exceptions import NotFound, ProductExists
 from products.service import ProductsService
 
 
@@ -62,6 +62,57 @@ def test_create_product(product, redis_client, service_container):
         int(stored_product[b'passenger_capacity']))
     assert product['in_stock'] == int(stored_product[b'in_stock'])
 
+def test_create_product_raise_error_if_product_exists(product, service_container):
+
+    with entrypoint_hook(service_container, 'create') as create:
+        create(product)
+
+    with pytest.raises(ProductExists):
+        create(product)
+
+def test_update_product(create_product, redis_client, service_container):
+
+    product = create_product()
+
+    update_product = { 'title': 'Toyota', 'name': 'Corola', 'in_stock': 5 }
+
+    with entrypoint_hook(service_container, 'update') as update:
+        update(update_product, product['id'])
+
+    updated_product = redis_client.hgetall('products:LZ127')
+
+    assert product['id'] == updated_product[b'id'].decode('utf-8')
+    assert updated_product[b'title'] == b'Toyota'
+    assert updated_product[b'name'] == b'Corola'
+    assert updated_product[b'in_stock'] == b'5'
+
+def test_update_product_raises_error_if_product_doesnt_exist(service_container):
+
+    update_product = { 'title': 'Toyota', 'name': 'Corola', 'in_stock': 5 }
+
+    with pytest.raises(NotFound) as exc_info:
+        with entrypoint_hook(service_container, 'update') as update:
+            update(update_product, 'random_id')
+
+    assert "Product ID random_id does not exist" == exc_info.value.args[0]
+
+def test_delete_product(redis_client, product, service_container):
+
+    with entrypoint_hook(service_container, 'create') as create:
+        create(product)
+
+    with entrypoint_hook(service_container, 'delete') as delete:
+        delete(product['id'])
+
+    assert not redis_client.exists(product['id'])
+
+def test_delete_product_raises_error_if_product_doesnt_exist(product, service_container):
+
+    with pytest.raises(NotFound) as exc_info:
+        with entrypoint_hook(service_container, 'delete') as delete:
+            delete(product['id'])
+
+    assert f"Product ID {product['id']} does not exist" == exc_info.value.args[0]
 
 @pytest.mark.parametrize('product_overrides, expected_errors', [
     ({'id': 111}, {'id': ['Not a valid string.']}),
@@ -79,7 +130,7 @@ def test_create_product(product, redis_client, service_container):
     ),
 ])
 def test_create_product_validation_error(
-    product_overrides, expected_errors, product, redis_client,
+    product_overrides, expected_errors, product,
     service_container
 ):
 
@@ -95,7 +146,7 @@ def test_create_product_validation_error(
 @pytest.mark.parametrize('field', [
     'id', 'title', 'passenger_capacity', 'maximum_speed', 'in_stock'])
 def test_create_product_validation_error_on_required_fields(
-    field, product, redis_client, service_container
+    field, product, service_container
 ):
 
     product.pop(field)
@@ -112,7 +163,7 @@ def test_create_product_validation_error_on_required_fields(
 @pytest.mark.parametrize('field', [
     'id', 'title', 'passenger_capacity', 'maximum_speed', 'in_stock'])
 def test_create_product_validation_error_on_non_nullable_fields(
-    field, product, redis_client, service_container
+    field, product, service_container
 ):
 
     product[field] = None

@@ -2,7 +2,7 @@ from nameko import config
 from nameko.extensions import DependencyProvider
 import redis
 
-from products.exceptions import NotFound
+from products.exceptions import NotFound, ProductExists
 
 
 REDIS_URI_KEY = 'REDIS_URI'
@@ -49,9 +49,23 @@ class StorageWrapper:
             yield self._from_hash(self.client.hgetall(key))
 
     def create(self, product):
+        if self.client.exists(self._format_key(product['id'])):
+            raise ProductExists('Product with ID {} already exists'.format(product['id']))
         self.client.hmset(
             self._format_key(product['id']),
             product)
+    
+    def update(self, updated_data, product_id):
+        if not self.client.exists(self._format_key(product_id)):
+            raise NotFound('Product ID {} does not exist'.format(product_id))
+        
+        self.client.hmset(self._format_key(product_id), updated_data)
+
+    def delete(self, product_id):
+        if not self.client.exists(self._format_key(product_id)):
+            raise NotFound('Product ID {} does not exist'.format(product_id))
+        
+        self.client.delete(self._format_key(product_id))
 
     def decrement_stock(self, product_id, amount):
         return self.client.hincrby(

@@ -1,0 +1,24 @@
+✓ Able to run locally, debug, unit-test - DONE
+✓ Able to smoke-test and performance test - DONE
+
+✓ Enhance product service - DONE
+✓ Delete product rpc call - DONE
+✓ Wire into smoketest.sh - DONE
+✓ (bonus) Wire into perf-test - DONE
+✓ (bonus) Wire unit-test for this method - DONE
+✓ Enhance order service - DONE
+✓ List orders rpc call - DONE
+✓ Wire into smoketest.sh - DONE
+✓ (bonus) Wire into perf-test - DONE
+✓ (bonus) Wire unit-test for this method - DONE
+✓ Execute performance test - DONE
+
+✓ Question 1: Why is performance degrading as the test run longer?
+
+A: Because the get order and create order calls will make the list orders have larger data as database results become longer with rpc calls in the respective methods.
+
+✓ Question 2: How do you fix it?
+
+A: Refactoring both so it removes the amount of unnecessary calls. In get order we remove the need to list all the products since we only need a certain amount of information in the order details and in create order we do a refactoring to call the the products listing only once so we can iterate over the product IDs and the in_stock attributes. Pagination structure was also added to the list orders method.
+
+✓ (bonus): Fix it - DONE
