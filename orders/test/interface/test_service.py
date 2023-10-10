@@ -45,7 +45,7 @@ def test_get_order(orders_rpc, order):
     assert response['id'] == order.id
 
 def test_list_orders(orders_rpc, orders):
-    response = orders_rpc.list_orders()
+    response = orders_rpc.list_orders(1, 10)
 
     assert isinstance(response, list)
     assert len(response) == len(orders)
