@@ -150,10 +150,15 @@ class GatewayService(object):
             mimetype='application/json'
         )
     
-    @http("GET", "/orders/")
+    @http("GET", "/orders/", expected_exceptions=(BadRequest))
     def list_orders(self, request):
-        orders = self.orders_rpc.list_orders()
         
+        page = int(request.args.get('page', 1))
+
+        items_per_page = int(request.args.get('items_per_page', 10))
+        
+        orders = self.orders_rpc.list_orders(page, items_per_page)
+
         return Response(
             GetOrderSchema(many=True).dumps(orders).data,
             mimetype='application/json'
@@ -165,10 +170,8 @@ class GatewayService(object):
         # Note - this may raise a remote exception that has been mapped to
         # raise``OrderNotFound``
         order = self.orders_rpc.get_order(order_id)
-
         # get the configured image root
         image_root = config['PRODUCT_IMAGE_ROOT']
-
         # Enhance order details with product and image details
         for item in order['order_details']:
             product_id = item['product_id']
@@ -260,4 +263,5 @@ class GatewayService(object):
         result = self.orders_rpc.create_order(
             serialized_data['order_details']
         )
+        print(f"RESULT CREATE ORDER: {result}")
         return result['id']

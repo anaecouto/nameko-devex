@@ -2,6 +2,7 @@ from nameko.events import EventDispatcher
 from nameko.rpc import rpc
 from nameko_sqlalchemy import DatabaseSession
 
+from nameko.exceptions import BadRequest
 from orders.exceptions import NotFound
 from orders.models import DeclarativeBase, Order, OrderDetail
 from orders.schemas import OrderSchema
@@ -76,14 +77,16 @@ class OrdersService:
         return order
     
     @rpc
-    def list_orders(self):
+    def list_orders(self, page, per_page):
         """
         List all orders.
 
         Returns:
             orders (list): A list containing the orders.
         """
-        orders = self.db.query(Order).all()
+        
+        offset = (page - 1) * per_page
+        orders = self.db.query(Order).offset(offset).limit(per_page).all()
 
         return OrderSchema(many=True).dump(orders).data
 
