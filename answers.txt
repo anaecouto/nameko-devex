@@ -19,6 +19,6 @@ A: Because the get order and create order calls will make the list orders have l
 
 ✓ Question 2: How do you fix it?
 
-A: Refactoring both so it removes the amount of unnecessary calls. In get order we remove the need to list all the products since we only need a certain amount of information in the order details and in create order we do a refactoring to call the the products listing only once so we can iterate over the product IDs and the in_stock attributes.
+A: Refactoring both so it removes the amount of unnecessary calls. In get order we remove the need to list all the products since we only need a certain amount of information in the order details and in create order we do a refactoring to call the the products listing only once so we can iterate over the product IDs and the in_stock attributes. Pagination structure was also added to the list orders method.
 
 ✓ (bonus): Fix it - DONE
